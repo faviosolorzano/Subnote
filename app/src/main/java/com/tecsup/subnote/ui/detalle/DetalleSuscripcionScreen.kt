@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
@@ -88,8 +89,34 @@ fun DetalleSuscripcionScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Text("Monto convertido", style = MaterialTheme.typography.labelMedium)
-                        Text("Pendiente (lo integra Daniella con Retrofit)", style = MaterialTheme.typography.bodyMedium)
+                        // ---- Conversión de moneda (parte de Daniella, Retrofit) ----
+                        Text(
+                            "Monto convertido (${uiState.monedaBase})",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        when {
+                            uiState.convirtiendo -> {
+                                // Estado de CARGA mientras se consulta la API.
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                            uiState.errorConversion -> {
+                                // Estado de ERROR (p. ej. sin Internet): no se cae, muestra aviso.
+                                Text(
+                                    "No se pudo convertir (sin conexión). " +
+                                        "Monto original: ${sub.moneda} ${"%.2f".format(sub.monto)}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            uiState.montoConvertido != null -> {
+                                Text(
+                                    "S/ ${"%.2f".format(uiState.montoConvertido)}",
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                            }
+                            else -> {
+                                Text("—", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text("Ciclo de cobro", style = MaterialTheme.typography.labelMedium)
