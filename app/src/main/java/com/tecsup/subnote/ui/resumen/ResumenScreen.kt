@@ -10,10 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.tecsup.subnote.ui.lista.getCategoryInfo
 import com.tecsup.subnote.ui.theme.*
 import com.tecsup.subnote.viewmodel.ResumenViewModel
+import androidx.compose.material.icons.filled.Star
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +65,7 @@ fun ResumenScreen(
             SummaryTotalCard(
                 title = "Gasto Mensual Total",
                 amount = uiState.gastoTotalMensual,
-                icon = Icons.Rounded.Star,
+                icon = Icons.Default.Star,
                 color = MaterialTheme.colorScheme.primary
             )
             
@@ -222,7 +222,7 @@ fun EmptyResumenState() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            Icons.Rounded.List,
+            Icons.AutoMirrored.Rounded.List,
             contentDescription = null,
             modifier = Modifier.size(64.dp).alpha(0.2f)
         )

@@ -10,15 +10,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -143,7 +144,7 @@ fun HeaderSection(gastoTotal: Double, onResumenClick: () -> Unit) {
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            Icons.Rounded.Insights,
+                            Icons.Default.Star,
                             contentDescription = "Ver resumen",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -281,10 +282,10 @@ data class CategoryInfo(val icon: ImageVector, val color: Color)
 fun getCategoryInfo(categoria: String): CategoryInfo {
     return when (categoria.lowercase()) {
         "entretenimiento" -> CategoryInfo(Icons.Default.PlayArrow, CatEntertainment)
-        "comida", "alimentación" -> CategoryInfo(Icons.Default.Restaurant, CatFood)
-        "transporte" -> CategoryInfo(Icons.Default.DirectionsCar, CatTransport)
+        "comida", "alimentación" -> CategoryInfo(Icons.Default.ThumbUp, CatFood)
+        "transporte" -> CategoryInfo(Icons.Default.Place, CatTransport)
         "salud" -> CategoryInfo(Icons.Default.Favorite, CatHealth)
-        "servicios", "utilities" -> CategoryInfo(Icons.Default.Lightbulb, CatUtilities)
-        else -> CategoryInfo(Icons.Default.Category, CatOther)
+        "servicios", "utilities" -> CategoryInfo(Icons.Default.Settings, CatUtilities)
+        else -> CategoryInfo(Icons.AutoMirrored.Filled.List, CatOther)
     }
 }
