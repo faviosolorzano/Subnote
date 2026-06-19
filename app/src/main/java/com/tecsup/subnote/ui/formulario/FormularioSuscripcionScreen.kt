@@ -1,31 +1,24 @@
 package com.tecsup.subnote.ui.formulario
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tecsup.subnote.data.local.Suscripcion
 import com.tecsup.subnote.viewmodel.FormularioViewModel
 import java.util.Calendar
@@ -38,7 +31,6 @@ fun FormularioSuscripcionScreen(
     onBack: () -> Unit,
     onGuardado: () -> Unit
 ) {
-    // Estado de cada campo del formulario.
     var idActual by remember { mutableStateOf<Long?>(null) }
     var nombre by remember { mutableStateOf("") }
     var monto by remember { mutableStateOf("") }
@@ -50,7 +42,6 @@ fun FormularioSuscripcionScreen(
 
     val esEdicion = suscripcionId != null
 
-    // Si entramos en modo edición, cargamos los datos existentes una sola vez.
     LaunchedEffect(suscripcionId) {
         if (suscripcionId != null) {
             val existente = viewModel.obtenerParaEditar(suscripcionId)
@@ -70,69 +61,105 @@ fun FormularioSuscripcionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (esEdicion) "Editar suscripción" else "Nueva suscripción") },
+                title = { 
+                    Text(
+                        if (esEdicion) "Editar suscripción" else "Nueva suscripción",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(24.dp)
         ) {
-            OutlinedTextField(
+            Text(
+                "Detalles del servicio",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            CustomTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
-                label = { Text("Nombre del servicio") },
-                modifier = Modifier.fillMaxWidth()
+                label = "Nombre del servicio",
+                placeholder = "Netflix, Spotify, etc.",
+                icon = Icons.Rounded.PlayArrow
             )
-            Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = monto,
-                onValueChange = { monto = it },
-                label = { Text("Monto") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = moneda,
-                onValueChange = { moneda = it.uppercase() },
-                label = { Text("Moneda (USD, PEN, EUR)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.weight(0.6f)) {
+                    CustomTextField(
+                        value = monto,
+                        onValueChange = { monto = it },
+                        label = "Monto",
+                        placeholder = "0.00",
+                        icon = Icons.Rounded.ShoppingCart,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Box(modifier = Modifier.weight(0.4f)) {
+                    CustomTextField(
+                        value = moneda,
+                        onValueChange = { moneda = it.uppercase() },
+                        label = "Moneda",
+                        placeholder = "USD",
+                        icon = Icons.Rounded.Settings
+                    )
+                }
+            }
 
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(16.dp))
+
+            CustomTextField(
                 value = cicloCobro,
                 onValueChange = { cicloCobro = it },
-                label = { Text("Ciclo de cobro (mensual/anual)") },
-                modifier = Modifier.fillMaxWidth()
+                label = "Ciclo de cobro",
+                placeholder = "mensual o anual",
+                icon = Icons.Rounded.Refresh
             )
-            Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(16.dp))
+
+            CustomTextField(
                 value = categoria,
                 onValueChange = { categoria = it },
-                label = { Text("Categoría") },
-                modifier = Modifier.fillMaxWidth()
+                label = "Categoría",
+                placeholder = "Entretenimiento, Hogar, etc.",
+                icon = Icons.AutoMirrored.Rounded.List
             )
-            Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(16.dp))
+
+            CustomTextField(
                 value = notas,
                 onValueChange = { notas = it },
-                label = { Text("Notas (opcional)") },
-                modifier = Modifier.fillMaxWidth()
+                label = "Notas adicionales",
+                placeholder = "Agrega algún detalle...",
+                icon = Icons.Rounded.Info,
+                singleLine = false,
+                minLines = 3
             )
-            Spacer(modifier = Modifier.height(24.dp))
+
+            Spacer(modifier = Modifier.height(40.dp))
 
             Button(
                 onClick = {
@@ -164,10 +191,69 @@ fun FormularioSuscripcionScreen(
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Text(if (esEdicion) "Actualizar" else "Guardar")
+                Text(
+                    if (esEdicion) "Actualizar Suscripción" else "Guardar Suscripción",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    singleLine: Boolean = true,
+    minLines: Int = 1
+) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(placeholder) },
+            leadingIcon = {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
+            keyboardOptions = keyboardOptions,
+            singleLine = singleLine,
+            minLines = minLines
+        )
     }
 }
