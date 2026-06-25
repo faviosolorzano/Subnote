@@ -13,6 +13,7 @@ import com.tecsup.subnote.ui.auth.RegisterScreen
 import com.tecsup.subnote.ui.detalle.DetalleSuscripcionScreen
 import com.tecsup.subnote.ui.formulario.FormularioSuscripcionScreen
 import com.tecsup.subnote.ui.lista.ListaSuscripcionesScreen
+import com.tecsup.subnote.ui.perfil.PerfilScreen
 import com.tecsup.subnote.ui.resumen.ResumenScreen
 import com.tecsup.subnote.viewmodel.*
 
@@ -56,6 +57,19 @@ fun NavGraph(repository: SuscripcionRepository, haySession: Boolean) {
                 onSuscripcionClick = { id -> navController.navigate(Screen.Detalle.crearRuta(id)) },
                 onNuevaClick = { navController.navigate(Screen.Formulario.crearRutaNueva()) },
                 onResumenClick = { navController.navigate(Screen.Resumen.route) },
+                onPerfilClick = { navController.navigate(Screen.Perfil.route) },
+                onCerrarSesion = {
+                    authViewModel.cerrarSesion()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Perfil.route) {
+            PerfilScreen(
+                onBack = { navController.popBackStack() },
                 onCerrarSesion = {
                     authViewModel.cerrarSesion()
                     navController.navigate(Screen.Login.route) {

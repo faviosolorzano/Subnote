@@ -3,11 +3,12 @@ package com.tecsup.subnote.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.tecsup.subnote.data.repository.SuscripcionRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 data class ResumenUiState(
     val gastoTotalMensual: Double = 0.0,
@@ -17,45 +18,27 @@ data class ResumenUiState(
 
 class ResumenViewModel(private val repository: SuscripcionRepository) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ResumenUiState())
-    val uiState: StateFlow<ResumenUiState> = _uiState.asStateFlow()
+    private val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-    init {
-        viewModelScope.launch {
-            repository.obtenerTodas().collect { lista ->
-                // Convertimos cada monto a PEN antes de sumar.
-                // Si la API falla para alguna suscripción, usamos su monto original.
-                suspend fun convertirAPEN(monto: Double, moneda: String): Double {
-                    return try {
-                        val tasa = repository.obtenerTipoCambio(moneda, "PEN")
-                        monto * tasa
-                    } catch (e: Exception) {
-                        monto
-                    }
-                }
+    val uiState: StateFlow<ResumenUiState> = repository.obtenerTodas(userId)
+        .map { lista ->
+            val mensual = lista.filter { it.cicloCobro == "mensual" }.sumOf { it.monto }
+            val anual = lista.filter { it.cicloCobro == "anual" }.sumOf { it.monto }
+            val totalAnualEquivalente = anual + (mensual * 12.0)
+            val porCategoria = lista.groupBy { it.categoria }
+                .mapValues { (_, subs) -> subs.sumOf { it.monto } }
 
-                var mensualPEN = 0.0
-                var anualPEN = 0.0
-                val porCategoria = mutableMapOf<String, Double>()
-
-                for (sub in lista) {
-                    val montoPEN = convertirAPEN(sub.monto, sub.moneda)
-                    when (sub.cicloCobro) {
-                        "mensual" -> mensualPEN += montoPEN
-                        "anual"   -> anualPEN += montoPEN
-                    }
-                    porCategoria[sub.categoria] =
-                        (porCategoria[sub.categoria] ?: 0.0) + montoPEN
-                }
-
-                _uiState.value = ResumenUiState(
-                    gastoTotalMensual = mensualPEN,
-                    gastoTotalAnual = anualPEN + (mensualPEN * 12.0),
-                    gastoPorCategoria = porCategoria
-                )
-            }
+            ResumenUiState(
+                gastoTotalMensual = mensual,
+                gastoTotalAnual = totalAnualEquivalente,
+                gastoPorCategoria = porCategoria
+            )
         }
-    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ResumenUiState()
+        )
 }
 
 class ResumenViewModelFactory(private val repository: SuscripcionRepository) : ViewModelProvider.Factory {

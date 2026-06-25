@@ -38,7 +38,8 @@ fun ListaSuscripcionesScreen(
     onSuscripcionClick: (Long) -> Unit,
     onNuevaClick: () -> Unit,
     onResumenClick: () -> Unit,
-    onCerrarSesion: () -> Unit = {}
+    onCerrarSesion: () -> Unit = {},
+    onPerfilClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -52,7 +53,11 @@ fun ListaSuscripcionesScreen(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.padding(8.dp)
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Agregar suscripción", modifier = Modifier.size(32.dp))
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = "Agregar suscripción",
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
     ) { padding ->
@@ -64,7 +69,8 @@ fun ListaSuscripcionesScreen(
             HeaderSection(
                 gastoTotal = uiState.gastoTotalMensual,
                 onResumenClick = onResumenClick,
-                onCerrarSesion = onCerrarSesion
+                onCerrarSesion = onCerrarSesion,
+                onPerfilClick = onPerfilClick
             )
 
             if (uiState.suscripciones.isEmpty()) {
@@ -100,7 +106,8 @@ fun ListaSuscripcionesScreen(
 fun HeaderSection(
     gastoTotal: Double,
     onResumenClick: () -> Unit,
-    onCerrarSesion: () -> Unit = {}
+    onCerrarSesion: () -> Unit = {},
+    onPerfilClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -132,12 +139,21 @@ fun HeaderSection(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
-                IconButton(onClick = onCerrarSesion) {
-                    Icon(
-                        Icons.Default.ExitToApp,
-                        contentDescription = "Cerrar sesión",
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
+                Row {
+                    IconButton(onClick = onPerfilClick) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Perfil",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    }
+                    IconButton(onClick = onCerrarSesion) {
+                        Icon(
+                            Icons.Default.ExitToApp,
+                            contentDescription = "Cerrar sesión",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    }
                 }
             }
 

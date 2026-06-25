@@ -15,15 +15,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.tecsup.subnote.data.local.Suscripcion
 import com.tecsup.subnote.viewmodel.FormularioViewModel
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 private val SERVICIOS_POPULARES = listOf(
     "Netflix" to "Entretenimiento",
@@ -63,6 +65,7 @@ fun FormularioSuscripcionScreen(
     onBack: () -> Unit,
     onGuardado: () -> Unit
 ) {
+    val context = LocalContext.current
     var idActual by remember { mutableStateOf<Long?>(null) }
     var nombre by remember { mutableStateOf("") }
     var monto by remember { mutableStateOf("") }
@@ -71,12 +74,17 @@ fun FormularioSuscripcionScreen(
     var categoria by remember { mutableStateOf("Entretenimiento") }
     var notas by remember { mutableStateOf("") }
     var fechaProximoCobro by remember { mutableStateOf(Calendar.getInstance().timeInMillis) }
+    var mostrarDatePicker by remember { mutableStateOf(false) }
 
     var expandedServicios by remember { mutableStateOf(false) }
     var expandedMonedas by remember { mutableStateOf(false) }
     var expandedCategorias by remember { mutableStateOf(false) }
 
     val esEdicion = suscripcionId != null
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = fechaProximoCobro
+    )
+    val formatoFecha = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
     LaunchedEffect(suscripcionId) {
         if (suscripcionId != null) {
@@ -94,15 +102,36 @@ fun FormularioSuscripcionScreen(
         }
     }
 
+    if (mostrarDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { mostrarDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        fechaProximoCobro = it
+                    }
+                    mostrarDatePicker = false
+                }) { Text("Confirmar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         if (esEdicion) "Editar suscripción" else "Nueva suscripción",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -130,7 +159,6 @@ fun FormularioSuscripcionScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Selector de Servicio (Dropdown + Manual)
             Column {
                 Text(
                     text = "Nombre del servicio",
@@ -144,20 +172,27 @@ fun FormularioSuscripcionScreen(
                 ) {
                     OutlinedTextField(
                         value = nombre,
-                        onValueChange = { 
+                        onValueChange = {
                             nombre = it
-                            // Opcional: Si escribe algo que coincide con popular, autoseleccionar categoria
-                            val coincide = SERVICIOS_POPULARES.find { p -> p.first.equals(it, ignoreCase = true) }
-                            if (coincide != null) {
-                                categoria = coincide.second
+                            val coincide = SERVICIOS_POPULARES.find { p ->
+                                p.first.equals(it, ignoreCase = true)
                             }
+                            if (coincide != null) categoria = coincide.second
                         },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryEditable),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryEditable),
                         placeholder = { Text("Netflix, Spotify, etc.") },
                         leadingIcon = {
-                            Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(
+                                Icons.Rounded.PlayArrow,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedServicios) },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedServicios)
+                        },
                         shape = RoundedCornerShape(16.dp),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = MaterialTheme.colorScheme.primary,
@@ -199,8 +234,6 @@ fun FormularioSuscripcionScreen(
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                
-                // Selector de Moneda
                 Column(modifier = Modifier.weight(0.4f)) {
                     Text(
                         text = "Moneda",
@@ -216,8 +249,12 @@ fun FormularioSuscripcionScreen(
                             value = moneda,
                             onValueChange = {},
                             readOnly = true,
-                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMonedas) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMonedas)
+                            },
                             shape = RoundedCornerShape(16.dp),
                             colors = TextFieldDefaults.colors(
                                 focusedIndicatorColor = MaterialTheme.colorScheme.primary,
@@ -247,14 +284,16 @@ fun FormularioSuscripcionScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Ciclo de Cobro (Mensual/Anual)
             Text(
                 text = "Ciclo de cobro",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
             )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 CicloCard(
                     label = "Mensual",
                     selected = cicloCobro.lowercase() == "mensual",
@@ -271,7 +310,47 @@ fun FormularioSuscripcionScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Selector de Categoría
+            Text(
+                text = "Próximo cobro",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+            )
+            OutlinedTextField(
+                value = formatoFecha.format(Date(fechaProximoCobro)),
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { mostrarDatePicker = true },
+                enabled = false,
+                placeholder = { Text("Selecciona la fecha") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Rounded.DateRange,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        Icons.Rounded.ArrowDropDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = TextFieldDefaults.colors(
+                    disabledIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.primary,
+                    disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                )
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Column {
                 Text(
                     text = "Categoría",
@@ -286,11 +365,19 @@ fun FormularioSuscripcionScreen(
                     OutlinedTextField(
                         value = categoria,
                         onValueChange = { categoria = it },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryEditable),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryEditable),
                         leadingIcon = {
-                            Icon(Icons.AutoMirrored.Rounded.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(
+                                Icons.AutoMirrored.Rounded.List,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategorias) },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategorias)
+                        },
                         shape = RoundedCornerShape(16.dp),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = MaterialTheme.colorScheme.primary,
@@ -336,7 +423,8 @@ fun FormularioSuscripcionScreen(
                     val montoDouble = monto.toDoubleOrNull() ?: 0.0
                     if (esEdicion && idActual != null) {
                         viewModel.actualizar(
-                            Suscripcion(
+                            context = context,
+                            suscripcion = Suscripcion(
                                 id = idActual!!,
                                 nombre = nombre,
                                 monto = montoDouble,
@@ -350,6 +438,7 @@ fun FormularioSuscripcionScreen(
                         )
                     } else {
                         viewModel.guardarNueva(
+                            context = context,
                             nombre = nombre,
                             monto = montoDouble,
                             moneda = moneda,
@@ -376,7 +465,7 @@ fun FormularioSuscripcionScreen(
                     color = Color.White
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
