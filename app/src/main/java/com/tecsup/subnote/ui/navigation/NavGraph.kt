@@ -8,37 +8,63 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tecsup.subnote.data.repository.SuscripcionRepository
+import com.tecsup.subnote.ui.auth.LoginScreen
+import com.tecsup.subnote.ui.auth.RegisterScreen
 import com.tecsup.subnote.ui.detalle.DetalleSuscripcionScreen
 import com.tecsup.subnote.ui.formulario.FormularioSuscripcionScreen
 import com.tecsup.subnote.ui.lista.ListaSuscripcionesScreen
 import com.tecsup.subnote.ui.resumen.ResumenScreen
-import com.tecsup.subnote.viewmodel.DetalleViewModel
-import com.tecsup.subnote.viewmodel.DetalleViewModelFactory
-import com.tecsup.subnote.viewmodel.FormularioViewModel
-import com.tecsup.subnote.viewmodel.FormularioViewModelFactory
-import com.tecsup.subnote.viewmodel.ListaViewModel
-import com.tecsup.subnote.viewmodel.ListaViewModelFactory
-import com.tecsup.subnote.viewmodel.ResumenViewModel
-import com.tecsup.subnote.viewmodel.ResumenViewModelFactory
+import com.tecsup.subnote.viewmodel.*
 
 @Composable
-fun NavGraph(repository: SuscripcionRepository) {
+fun NavGraph(repository: SuscripcionRepository, haySession: Boolean) {
     val navController = rememberNavController()
+    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory())
 
-    NavHost(navController = navController, startDestination = Screen.Lista.route) {
+    val startDestination = if (haySession) Screen.Lista.route else Screen.Login.route
 
-        // ---- Lista ----
+    NavHost(navController = navController, startDestination = startDestination) {
+
+        composable(Screen.Login.route) {
+            LoginScreen(
+                viewModel = authViewModel,
+                onLoginExitoso = {
+                    navController.navigate(Screen.Lista.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onIrARegistro = { navController.navigate(Screen.Register.route) }
+            )
+        }
+
+        composable(Screen.Register.route) {
+            RegisterScreen(
+                viewModel = authViewModel,
+                onRegistroExitoso = {
+                    navController.navigate(Screen.Lista.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Screen.Lista.route) {
             val viewModel: ListaViewModel = viewModel(factory = ListaViewModelFactory(repository))
             ListaSuscripcionesScreen(
                 viewModel = viewModel,
                 onSuscripcionClick = { id -> navController.navigate(Screen.Detalle.crearRuta(id)) },
                 onNuevaClick = { navController.navigate(Screen.Formulario.crearRutaNueva()) },
-                onResumenClick = { navController.navigate(Screen.Resumen.route) }
+                onResumenClick = { navController.navigate(Screen.Resumen.route) },
+                onCerrarSesion = {
+                    authViewModel.cerrarSesion()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 
-        // ---- Detalle ----
         composable(
             route = Screen.Detalle.route,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
@@ -53,7 +79,6 @@ fun NavGraph(repository: SuscripcionRepository) {
             )
         }
 
-        // ---- Formulario (crear / editar) ----
         composable(
             route = Screen.Formulario.route,
             arguments = listOf(navArgument("id") {
@@ -71,7 +96,6 @@ fun NavGraph(repository: SuscripcionRepository) {
             )
         }
 
-        // ---- Resumen ----
         composable(Screen.Resumen.route) {
             val viewModel: ResumenViewModel = viewModel(factory = ResumenViewModelFactory(repository))
             ResumenScreen(

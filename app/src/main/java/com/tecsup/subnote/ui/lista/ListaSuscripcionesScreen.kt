@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
@@ -25,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecsup.subnote.data.local.Suscripcion
@@ -37,7 +37,8 @@ fun ListaSuscripcionesScreen(
     viewModel: ListaViewModel,
     onSuscripcionClick: (Long) -> Unit,
     onNuevaClick: () -> Unit,
-    onResumenClick: () -> Unit
+    onResumenClick: () -> Unit,
+    onCerrarSesion: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -60,7 +61,11 @@ fun ListaSuscripcionesScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            HeaderSection(uiState.gastoTotalMensual, onResumenClick)
+            HeaderSection(
+                gastoTotal = uiState.gastoTotalMensual,
+                onResumenClick = onResumenClick,
+                onCerrarSesion = onCerrarSesion
+            )
 
             if (uiState.suscripciones.isEmpty()) {
                 EmptyState(onNuevaClick)
@@ -71,7 +76,6 @@ fun ListaSuscripcionesScreen(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
-
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 80.dp)
@@ -93,7 +97,11 @@ fun ListaSuscripcionesScreen(
 }
 
 @Composable
-fun HeaderSection(gastoTotal: Double, onResumenClick: () -> Unit) {
+fun HeaderSection(
+    gastoTotal: Double,
+    onResumenClick: () -> Unit,
+    onCerrarSesion: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -119,6 +127,27 @@ fun HeaderSection(gastoTotal: Double, onResumenClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Text(
+                    "Subnote",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                IconButton(onClick = onCerrarSesion) {
+                    Icon(
+                        Icons.Default.ExitToApp,
+                        contentDescription = "Cerrar sesión",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column {
                     Text(
                         "Gasto mensual",
@@ -135,7 +164,7 @@ fun HeaderSection(gastoTotal: Double, onResumenClick: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                
+
                 Surface(
                     onClick = onResumenClick,
                     shape = CircleShape,
@@ -162,7 +191,7 @@ fun SubscriptionItem(
     onDelete: () -> Unit
 ) {
     val categoryInfo = getCategoryInfo(suscripcion.categoria)
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -224,7 +253,7 @@ fun SubscriptionItem(
                     fontWeight = FontWeight.Bold
                 )
             }
-            
+
             IconButton(onClick = onDelete, modifier = Modifier.padding(start = 8.dp)) {
                 Icon(
                     Icons.Rounded.Delete,
@@ -262,7 +291,7 @@ fun EmptyState(onNuevaClick: () -> Unit) {
         Text(
             "Comienza agregando tu primera suscripción para llevar un control de tus gastos.",
             style = MaterialTheme.typography.bodyMedium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
         Spacer(modifier = Modifier.height(32.dp))
