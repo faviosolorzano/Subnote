@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SuscripcionDao {
 
-    @Query("SELECT * FROM suscripciones ORDER BY fechaProximoCobro ASC")
-    fun obtenerTodas(): Flow<List<Suscripcion>>
+    @Query("SELECT * FROM suscripciones WHERE userId = :userId ORDER BY fechaProximoCobro ASC")
+    fun obtenerTodas(userId: String): Flow<List<Suscripcion>>
 
     @Query("SELECT * FROM suscripciones WHERE id = :id")
     suspend fun obtenerPorId(id: Long): Suscripcion?

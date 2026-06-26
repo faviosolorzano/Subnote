@@ -25,4 +25,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Subnote"
 include(":app")
- 

@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class Suscripcion(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    val userId: String = "",
     val nombre: String,
     val monto: Double,
     val moneda: String,

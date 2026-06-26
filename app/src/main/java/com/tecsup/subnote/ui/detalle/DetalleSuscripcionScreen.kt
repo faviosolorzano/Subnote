@@ -1,31 +1,29 @@
 package com.tecsup.subnote.ui.detalle
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.tecsup.subnote.ui.lista.getCategoryInfo
+import com.tecsup.subnote.ui.theme.*
 import com.tecsup.subnote.viewmodel.DetalleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,19 +43,23 @@ fun DetalleSuscripcionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalle") },
+                title = { Text("") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 actions = {
                     IconButton(onClick = { onEditar(suscripcionId) }) {
-                        Icon(Icons.Filled.Edit, contentDescription = "Editar")
+                        Icon(Icons.Rounded.Edit, contentDescription = "Editar")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Box(
             modifier = Modifier
@@ -65,7 +67,10 @@ fun DetalleSuscripcionScreen(
                 .fillMaxSize()
         ) {
             if (uiState.cargando) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
             } else {
                 val sub = uiState.suscripcion
                 if (sub == null) {
@@ -74,70 +79,227 @@ fun DetalleSuscripcionScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
+                    val categoryInfo = getCategoryInfo(sub.categoria)
+                    
                     Column(
                         modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        Text(sub.nombre, style = MaterialTheme.typography.headlineSmall)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text("Monto original", style = MaterialTheme.typography.labelMedium)
-                        Text(
-                            "${sub.moneda} ${"%.2f".format(sub.monto)}",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // ---- Conversión de moneda (parte de Daniella, Retrofit) ----
-                        Text(
-                            "Monto convertido (${uiState.monedaBase})",
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        when {
-                            uiState.convirtiendo -> {
-                                // Estado de CARGA mientras se consulta la API.
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                            }
-                            uiState.errorConversion -> {
-                                // Estado de ERROR (p. ej. sin Internet): no se cae, muestra aviso.
-                                Text(
-                                    "No se pudo convertir (sin conexión). " +
-                                        "Monto original: ${sub.moneda} ${"%.2f".format(sub.monto)}",
-                                    style = MaterialTheme.typography.bodyMedium
+                        // Header Section
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(categoryInfo.color.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = categoryInfo.icon,
+                                    contentDescription = null,
+                                    tint = categoryInfo.color,
+                                    modifier = Modifier.size(40.dp)
                                 )
                             }
-                            uiState.montoConvertido != null -> {
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            Text(
+                                text = sub.nombre,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            
+                            Surface(
+                                modifier = Modifier.padding(top = 8.dp),
+                                shape = CircleShape,
+                                color = if (sub.estado == "activa") SuccessGreen.copy(alpha = 0.1f) else ErrorRed.copy(alpha = 0.1f)
+                            ) {
                                 Text(
-                                    "S/ ${"%.2f".format(uiState.montoConvertido)}",
-                                    style = MaterialTheme.typography.titleLarge
+                                    text = sub.estado.uppercase(),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (sub.estado == "activa") SuccessGreen else ErrorRed,
+                                    fontWeight = FontWeight.Bold
                                 )
-                            }
-                            else -> {
-                                Text("—", style = MaterialTheme.typography.bodyMedium)
                             }
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
 
-                        Text("Ciclo de cobro", style = MaterialTheme.typography.labelMedium)
-                        Text(sub.cicloCobro, style = MaterialTheme.typography.bodyLarge)
-                        Spacer(modifier = Modifier.height(16.dp))
+                        // Main Amount Card
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(modifier = Modifier.padding(24.dp)) {
+                                Text(
+                                    "Monto de suscripción",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    Text(
+                                        "${sub.moneda} ${"%.2f".format(sub.monto)}",
+                                        style = MaterialTheme.typography.displaySmall.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            letterSpacing = (-1).sp
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "/ ${sub.cicloCobro}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                }
 
-                        Text("Categoría", style = MaterialTheme.typography.labelMedium)
-                        Text(sub.categoria, style = MaterialTheme.typography.bodyLarge)
-                        Spacer(modifier = Modifier.height(16.dp))
+                                if (sub.moneda != "PEN") {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    
+                                    Text(
+                                        "Equivalente aproximado",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                    
+                                    when {
+                                        uiState.convirtiendo -> {
+                                            LinearProgressIndicator(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(top = 8.dp)
+                                                    .height(2.dp),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        uiState.errorConversion -> {
+                                            Text(
+                                                "No se pudo obtener el cambio actual",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                        uiState.montoConvertido != null -> {
+                                            Text(
+                                                "S/ ${"%.2f".format(uiState.montoConvertido)}",
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
-                        Text("Estado", style = MaterialTheme.typography.labelMedium)
-                        Text(sub.estado, style = MaterialTheme.typography.bodyLarge)
+                        // Detail Info Section
+                        Text(
+                            "Información adicional",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        )
+
+                        DetailItem(
+                            icon = Icons.AutoMirrored.Rounded.List,
+                            label = "Categoría",
+                            value = sub.categoria
+                        )
+                        
+                        DetailItem(
+                            icon = Icons.Rounded.DateRange,
+                            label = "Próximo cobro",
+                            value = "Pendiente"
+                        )
 
                         if (sub.notas.isNotBlank()) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Notas", style = MaterialTheme.typography.labelMedium)
-                            Text(sub.notas, style = MaterialTheme.typography.bodyLarge)
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Rounded.Info,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "Notas",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        sub.notas,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            }
                         }
+                        
+                        Spacer(modifier = Modifier.height(32.dp))
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun DetailItem(icon: ImageVector, label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.size(40.dp),
+            shadowElevation = 1.dp
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

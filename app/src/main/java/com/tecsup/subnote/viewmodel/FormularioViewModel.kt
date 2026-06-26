@@ -1,25 +1,25 @@
 package com.tecsup.subnote.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.tecsup.subnote.data.local.Suscripcion
 import com.tecsup.subnote.data.repository.SuscripcionRepository
+import com.tecsup.subnote.notifications.NotificationScheduler
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel del formulario. Sirve para CREAR una suscripción nueva y para
- * EDITAR una existente, según si la pantalla recibe un id o no.
- */
 class FormularioViewModel(private val repository: SuscripcionRepository) : ViewModel() {
 
-    /** Trae la suscripción a editar (o null si no existe). La usa la pantalla al abrir en modo edición. */
+    private val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
     suspend fun obtenerParaEditar(id: Long): Suscripcion? {
         return repository.obtenerPorId(id)
     }
 
-    /** Inserta una suscripción nueva y luego ejecuta [onGuardado] (normalmente: volver atrás). */
     fun guardarNueva(
+        context: Context,
         nombre: String,
         monto: Double,
         moneda: String,
@@ -30,25 +30,31 @@ class FormularioViewModel(private val repository: SuscripcionRepository) : ViewM
         onGuardado: () -> Unit
     ) {
         viewModelScope.launch {
-            repository.insertar(
-                Suscripcion(
-                    nombre = nombre,
-                    monto = monto,
-                    moneda = moneda,
-                    cicloCobro = cicloCobro,
-                    fechaProximoCobro = fechaProximoCobro,
-                    categoria = categoria,
-                    notas = notas
-                )
+            val suscripcion = Suscripcion(
+                userId = userId,
+                nombre = nombre,
+                monto = monto,
+                moneda = moneda,
+                cicloCobro = cicloCobro,
+                fechaProximoCobro = fechaProximoCobro,
+                categoria = categoria,
+                notas = notas
             )
+            val id = repository.insertar(suscripcion)
+            val conId = suscripcion.copy(id = id)
+            NotificationScheduler.programarRecordatorio(context, conId)
             onGuardado()
         }
     }
 
-    /** Actualiza una suscripción existente y luego ejecuta [onGuardado]. */
-    fun actualizar(suscripcion: Suscripcion, onGuardado: () -> Unit) {
+    fun actualizar(
+        context: Context,
+        suscripcion: Suscripcion,
+        onGuardado: () -> Unit
+    ) {
         viewModelScope.launch {
             repository.actualizar(suscripcion)
+            NotificationScheduler.programarRecordatorio(context, suscripcion)
             onGuardado()
         }
     }
